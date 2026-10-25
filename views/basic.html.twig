@@ -6,6 +6,7 @@
     <title>{{ block('title') | trim ? (block('title') | trim ~ ' · ' ~ app.title) : app.title }}</title>
     <meta name="description" content="{{ block('description') | trim | default(app.description) }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
     {% block og -%}
       <meta property="og:site_name" content="{{ app.name }}">
       <meta property="og:type" content="{{ block('og_type') | trim | default('website') }}">

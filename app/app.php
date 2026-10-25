@@ -11,7 +11,7 @@ if (strpos($_SERVER['SCRIPT_NAME'], 'kahlan') !== false) {
     $app['env'] = 'dev';
 }
 
-foreach (['app', $app['env'], 'secrets'] as $config) {
+foreach (['app', $app['env'], 'secrets', 'local'] as $config) {
     if (file_exists(__DIR__ . '/../config/' . $config . '.yml')) {
         $app->register(new Igorw\Silex\ConfigServiceProvider(__DIR__ . '/../config/' . $config . '.yml'));
     }
