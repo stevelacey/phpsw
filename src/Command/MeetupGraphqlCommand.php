@@ -39,7 +39,8 @@ class MeetupGraphqlCommand extends Command
             'events'   => function ($callback) use ($input) { $this->importEvents($callback, $input->getOption('overwrite')); },
             'speakers' => function ($callback) { $this->importSpeakers($callback); },
             'talks'    => function ($callback) { $this->importTalks($callback); },
-            'avatars'  => function ($callback) { $this->importAvatars($callback); }
+            'avatars'  => function ($callback) { $this->importAvatars($callback); },
+            'embeds'   => function ($callback) { $this->importEmbeds($callback); }
         ];
 
         foreach ($tasks as $type => $task) {
@@ -343,6 +344,30 @@ class MeetupGraphqlCommand extends Command
                     file_put_contents($this->app['console.project_directory'] . '/web' . $path, $image);
 
                     $this->redis->hset('avatars', $handle, $path);
+
+                    $callback();
+                }
+            }
+        }
+    }
+
+    /**
+     * Iframe urls for Speaker Deck slides, from its oEmbed endpoint
+     */
+    protected function importEmbeds($callback)
+    {
+        $endpoints = [
+            'speakerdeck.com' => 'https://speakerdeck.com/oembed.json?url='
+        ];
+
+        foreach (array_unique($this->redis->hgetall('slides')) as $url) {
+            foreach ($endpoints as $domain => $endpoint) {
+                if (strpos($url, $domain) === false) continue;
+
+                $oembed = json_decode(@file_get_contents($endpoint . urlencode($url)));
+
+                if (isset($oembed->html) && preg_match('#<iframe[^>]+src="([^"]+)"#', $oembed->html, $matches)) {
+                    $this->redis->hset('embeds', $url, preg_replace('#^//#', 'https://', html_entity_decode($matches[1])));
 
                     $callback();
                 }

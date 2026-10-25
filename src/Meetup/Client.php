@@ -991,6 +991,9 @@ class Client
 
             $url = $this->redis->hget('slides', $talk->id);
 
+            // slides.com only embeds over https, and slid.es is now slides.com
+            $url = preg_replace('#^https?://(slid\.es|slides\.com)/#', 'https://slides.com/', $url);
+
             if ($url) {
                 switch (true) {
                     case !!strpos($url, 'google.com/p'): $type = 'Google Docs';  break;
@@ -1002,10 +1005,17 @@ class Client
                     default:                                $type = null;
                 }
 
-                $embedlyable = in_array($type, ['SlideShare', 'Speaker Deck']);
-                $iframeable = !$embedlyable && strpos($url, 'https://') === 0;
+                // embedly gets a bot challenge from SlideShare now, and so do SlideShare's own embeds
+                // without third party cookies, so link to those, and embed Speaker Deck with the
+                // iframe url its oEmbed endpoint gives, which meetup:import:graphql stores
+                $embed = $type == 'SlideShare' ? null : $this->redis->hget('embeds', $url);
 
-                if ($iframeable) {
+                $embedlyable = !$embed && $type == 'Speaker Deck';
+                $iframeable = !$embedlyable && strpos($url, 'https://') === 0 || $embed;
+
+                if ($embed) {
+                    $iframe = $embed;
+                } elseif ($iframeable) {
                     if (in_array($type, ['Google Docs', 'slides.com', 'slid.es'])) {
                         $iframe = str_replace('/pub', '', $url) . '/embed';
                     } elseif ($type == 'PDF') {
