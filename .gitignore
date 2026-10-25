@@ -1,11 +1,6 @@
 /config/secrets.yml
 /node_modules
 /vendor
-/views/*.svg.twig
-/web/css
-/web/fonts
-/web/images
-/web/js
 /web/avatars
 /config/local.yml
 /web/export.json

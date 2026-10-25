@@ -8,6 +8,7 @@
   &__sw__text {
     animation: kaboom 2s linear;
     transform-origin: 50% 50%;
+    transform-box: fill-box; // browsers now default svg elements to the view box
     transform: scale(1.0);
     transition: transform .25s linear;
 
