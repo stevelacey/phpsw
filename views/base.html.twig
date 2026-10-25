@@ -12,7 +12,7 @@
 
     {% if block('hero') | trim %}
       <div class="hero hero--{{ block('hero_modifier') | trim | default('default') }}">
-        <div class="hero__image" style="background-image: {{ 'url' in block('hero') ? block('hero') | trim : ("url('" ~ block('hero') | trim ~ "')") }}"></div>
+        <div class="hero__image" style="background-image: {{ ('url(' in block('hero') ? block('hero') | trim : ("url('" ~ block('hero') | trim ~ "')")) | raw }}"></div>
         <div class="hero__overlay"></div>
 
         {# include('bar.html.twig') #}
@@ -41,5 +41,4 @@
   {% endblock %}
 
   <script src="//cdn.embedly.com/widgets/platform.js"></script>
-  <script src="//maps.google.com/maps/api/js?sensor=true"></script>
 {% endblock %}

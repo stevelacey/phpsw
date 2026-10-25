@@ -5,10 +5,14 @@
 {% endblock %}
 
 {% block hero %}
-  url('{{ avatar(speaker.photo.url, 'large') }}')
+  {%- set initials = 'ui-avatars.com' in speaker.photo.url | default -%}
+
+  {%- if speaker.photo is defined and not initials -%}
+    url('{{ avatar(speaker.photo.url, 'large') }}')
+  {%- endif -%}
 
   {%- if speaker.photos -%}
-    , url('{{ speaker.photos ? speaker(random(speaker.photos).highres_link) }}')
+    {{ speaker.photo is defined and not initials ? ', ' }}url('{{ speaker(random(speaker.photos).highres_link) }}')
   {%- endif -%}
 {% endblock %}
 

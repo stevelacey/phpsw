@@ -96,7 +96,9 @@
           <div class="organiser organiser--{{ organiser.name | split(' ') | first | lower }} col-xs-6">
             <a href="{{ organiser.url }}">
               <div class="avatar avatar--medium">
-                {% if organiser.twitter | default %}
+                {% if organiser.github | default %}
+                  <img src="https://github.com/{{ organiser.github }}.png?size=400" alt="{{ organiser.name }}">
+                {% elseif organiser.twitter | default %}
                   <img src="{{ avatar('http://avatars.phpsw.uk/twitter/' ~ organiser.twitter ~ '?size=400x400', 'medium') }}" alt="{{ organiser.name }}">
                 {% elseif organiser.profile | default %}
                   <img src="{{ avatar('http://photos1.meetupstatic.com/photos/member/member_' ~ organiser.profile ~ '.jpeg', 'medium') }}" alt="{{ organiser.name }}">

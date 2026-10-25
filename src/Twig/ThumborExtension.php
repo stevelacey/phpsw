@@ -4,9 +4,10 @@ namespace PHPSW\Twig;
 
 class ThumborExtension extends \Twig_Extension
 {
-    public function __construct(\Thumbor\Url\BuilderFactory $builder)
+    public function __construct(?\Thumbor\Url\BuilderFactory $builder = null, ?callable $avatars = null)
     {
         $this->builder = $builder;
+        $this->avatars = $avatars;
     }
 
     public function getFunctions()
@@ -60,6 +61,8 @@ class ThumborExtension extends \Twig_Extension
 
     public function thumbor($url)
     {
+        if (!$this->builder) return new WsrvUrl($url, $this->avatars);
+
         return $this->builder->url($url);
     }
 

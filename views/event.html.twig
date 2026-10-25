@@ -145,16 +145,10 @@
     </div>
 
     {% if event.venue %}
-      <div
-        id="venue" class="event__venue"
-        {% if (event.venue.lat) %}data-latitude="{{ event.venue.lat }}"{% endif %}
-        {% if (event.venue.lon) %}data-longitude="{{ event.venue.lon }}"{% endif %}
-        style="background-image: url('{{
-            'https://maps.googleapis.com/maps/api/staticmap?markers='
-            ~ event.venue.lat ~ ',' ~ event.venue.lon ~
-            '&scale=2&size=640x320&zoom=16'
-        }}')"
-      >
+      <div id="venue" class="event__venue">
+        {% if event.venue.lat and event.venue.lon %}
+          <div class="event__map" data-lat="{{ event.venue.lat }}" data-lng="{{ event.venue.lon }}"></div>
+        {% endif %}
         <div class="event__venue__overlay">
           <h2>Venue</h2>
 
@@ -165,6 +159,47 @@
           </p>
         </div>
       </div>
+    {% endif %}
+
+    {% if event.venue and event.venue.lat and event.venue.lon %}
+      <script>
+        (function () {
+          var el = document.querySelector('.event__map');
+          var center = [parseFloat(el.dataset.lng), parseFloat(el.dataset.lat)];
+
+          function init() {
+            var map = new maplibregl.Map({
+              container: el,
+              style: '/mapstyle.json',
+              center: center,
+              zoom: 15,
+              scrollZoom: false
+            });
+
+            map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'bottom-right');
+
+            // the style's sprite lacks a few poi icons, show nothing rather than warn
+            map.on('styleimagemissing', function (e) {
+              map.addImage(e.id, {width: 1, height: 1, data: new Uint8Array(4)});
+            });
+
+            new maplibregl.Marker({color: '#ea4335'}).setLngLat(center).addTo(map);
+          }
+
+          // pages load over ajax too, where script tags run out of order, so load maplibre here
+          if (window.maplibregl) return init();
+
+          var css = document.createElement('link');
+          css.rel = 'stylesheet';
+          css.href = 'https://unpkg.com/maplibre-gl@5.7.0/dist/maplibre-gl.css';
+          document.head.appendChild(css);
+
+          var js = document.createElement('script');
+          js.src = 'https://unpkg.com/maplibre-gl@5.7.0/dist/maplibre-gl.js';
+          js.onload = init;
+          document.head.appendChild(js);
+        })();
+      </script>
     {% endif %}
 
     <div id="attendees" class="container">
