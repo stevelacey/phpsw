@@ -42,6 +42,8 @@ class RestoreCommand extends Command
 
             echo PHP_EOL;
         }
+
+        $redis->del('cache:events');
     }
 
     protected function parse($value)

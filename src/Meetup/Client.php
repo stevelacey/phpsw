@@ -78,6 +78,11 @@ class Client
 
     public function getEvents()
     {
+        // parsing every event's talks on each request is slow, so keep the result until the next import
+        if ($this->events === null && !$this->cli && $cached = $this->redis->get('cache:events')) {
+            $this->events = unserialize($cached);
+        }
+
         if ($this->events === null) {
             if ($this->cli) {
                 $this->events = $this->getEventsFromApi();
@@ -146,6 +151,10 @@ class Client
             uasort($this->events, function($a, $b) {
                 return $b->date <=> $a->date;
             });
+
+            if (!$this->cli) {
+                $this->redis->set('cache:events', serialize($this->events));
+            }
         }
 
         return $this->events;

@@ -48,6 +48,8 @@ class MeetupGraphqlCommand extends Command
             $tasks = array_intersect_key($tasks, array_flip(explode(',', $input->getOption('only'))));
         }
 
+        $this->redis->del('cache:events');
+
         foreach ($tasks as $type => $task) {
             echo ucfirst($type), ': ';
 
@@ -56,6 +58,9 @@ class MeetupGraphqlCommand extends Command
             });
 
             echo PHP_EOL;
+
+            // speakers and talks parse events, which caches them, so start again after each task
+            $this->redis->del('cache:events');
         }
     }
 

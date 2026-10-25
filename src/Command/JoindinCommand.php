@@ -10,8 +10,6 @@ use Knp\Command\Command,
 
 class JoindinCommand extends Command
 {
-    protected $cc = false;
-
     protected function configure()
     {
         $this->setName('joindin:import:all');
@@ -51,7 +49,7 @@ class JoindinCommand extends Command
                     foreach ($talks as $talk) {
                         $id = $eventId . '-' . $this->meetup->slugify($talk->talk_title);
 
-                        $this->cc = !!$this->redis->hset('feedback', $id, json_encode((object) [
+                        $this->redis->hset('feedback', $id, json_encode((object) [
                             'comments' => array_filter(
                                 $comments,
                                 function ($comment) use ($talk) {
@@ -62,7 +60,7 @@ class JoindinCommand extends Command
                             'rating'   => $talk->average_rating,
                             'starred'  => $talk->starred_count,
                             'uri'      => str_replace('/talk/view', '', $talk->website_uri)
-                        ])) || $this->cc;
+                        ]));
 
                         $callback();
                     }
@@ -80,17 +78,8 @@ class JoindinCommand extends Command
             echo PHP_EOL;
         }
 
-        // restarts varnish and warms the cache on the old phpsw.uk server
-        if ($this->cc && $app['env'] == 'prod') $this->refresh();
+        // talks show their feedback, so drop the parsed events the site caches
+        $this->redis->del('cache:events');
     }
 
-    protected function refresh()
-    {
-         exec('sudo service varnish restart');
-         file_get_contents('https://phpsw.uk');
-         file_get_contents('https://phpsw.uk/events');
-         file_get_contents('https://phpsw.uk/speakers');
-         file_get_contents('https://phpsw.uk/sponsors');
-         file_get_contents('https://phpsw.uk/talks');
-    }
 }
