@@ -29,14 +29,29 @@ class JoindinCommand extends Command
             'feedback' => function ($callback) {
                 $events = $this->joindin->get('https://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
 
+                // most joind.in events link to phpsw.uk without the meetup id, so fall back to the date
+                $dates = [];
+
+                foreach ($this->redis->hgetall('events') as $id => $meetup) {
+                    $dates[date('Y-m-d', json_decode($meetup)->time / 1000)] = $id;
+                }
+
                 foreach ($events as $event) {
+                    if (preg_match('#/(\d+)[-/]#', $event->href, $matches)) {
+                        $eventId = $matches[1];
+                    } elseif (isset($dates[substr($event->start_date, 0, 10)])) {
+                        $eventId = $dates[substr($event->start_date, 0, 10)];
+                    } else {
+                        continue;
+                    }
+
                     $comments = $this->joindin->get($event->all_talk_comments_uri)->comments;
                     $talks = $this->joindin->get($event->talks_uri)->talks;
 
                     foreach ($talks as $talk) {
-                        $id = preg_replace('#.*/(\d+)-.*#', '\1', $event->href) . '-' . $this->meetup->slugify($talk->talk_title);
+                        $id = $eventId . '-' . $this->meetup->slugify($talk->talk_title);
 
-                        $this->cc = $this->cc ?: !!$this->redis->hset('feedback', $id, json_encode((object) [
+                        $this->cc = !!$this->redis->hset('feedback', $id, json_encode((object) [
                             'comments' => array_filter(
                                 $comments,
                                 function ($comment) use ($talk) {
@@ -47,7 +62,7 @@ class JoindinCommand extends Command
                             'rating'   => $talk->average_rating,
                             'starred'  => $talk->starred_count,
                             'uri'      => str_replace('/talk/view', '', $talk->website_uri)
-                        ]));
+                        ])) || $this->cc;
 
                         $callback();
                     }
@@ -65,7 +80,8 @@ class JoindinCommand extends Command
             echo PHP_EOL;
         }
 
-        if ($this->cc) $this->refresh();
+        // restarts varnish and warms the cache on the old phpsw.uk server
+        if ($this->cc && $app['env'] == 'prod') $this->refresh();
     }
 
     protected function refresh()
