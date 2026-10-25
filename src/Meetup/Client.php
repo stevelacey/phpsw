@@ -888,8 +888,15 @@ class Client
                                 unset($speaker->photo);
                             }
 
+                            // e.g. an old talk linking a dead twitter account, use the photo their other talks found
+                            if (!isset($speaker->photo) && $known = json_decode($this->redis->hget('speakers', $speaker->slug))) {
+                                if (isset($known->photo->url) && strpos($known->photo->url, 'ui-avatars.com') === false) {
+                                    $speaker->photo = $known->photo;
+                                }
+                            }
+
                             if (!isset($speaker->photo)) {
-                                $initials = 'https://ui-avatars.com/api/?size=400&name=' . urlencode($speaker->name);
+                                $initials = avatar_url(name: $speaker->name, size: 400);
 
                                 $speaker->photo = (object) [
                                     'thumb_link' => $initials,

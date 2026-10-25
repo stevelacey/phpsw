@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a27032467801d7bf07b719b81a476826",
+    "content-hash": "242c800ac386cb518b95f907dd2b8c4b",
     "packages": [
         {
             "name": "99designs/phumbor",
@@ -1710,6 +1710,78 @@
             },
             "abandoned": "symfony/flex",
             "time": "2017-04-30T16:26:54+00:00"
+        },
+        {
+            "name": "stevelacey/ui-avatars",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/stevelacey/ui-avatars-php.git",
+                "reference": "359d8788f13ed0b571e08853c1cc4bd6e9fdc12e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/stevelacey/ui-avatars-php/zipball/359d8788f13ed0b571e08853c1cc4bd6e9fdc12e",
+                "reference": "359d8788f13ed0b571e08853c1cc4bd6e9fdc12e",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "filament/filament": "^3.0|^4.0|^5.0",
+                "laravel/jetstream": "^5.0",
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^3.0"
+            },
+            "suggest": {
+                "filament/filament": "Use avatars as the default avatar provider",
+                "illuminate/support": "Configure the shared instance from config/ui-avatars.php in Laravel",
+                "laravel/jetstream": "Use avatars as the default profile photo"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "SteveLacey\\UiAvatars\\Laravel\\ServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "SteveLacey\\UiAvatars\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Steve Lacey",
+                    "email": "steve@steve.ly"
+                }
+            ],
+            "description": "Deterministic avatar URLs: Gravatar photos with a colorful initials fallback.",
+            "keywords": [
+                "Initials",
+                "avatar",
+                "gravatar",
+                "laravel",
+                "libravatar",
+                "placeholder",
+                "ui-avatars"
+            ],
+            "support": {
+                "issues": "https://github.com/stevelacey/ui-avatars-php/issues",
+                "source": "https://github.com/stevelacey/ui-avatars-php/tree/1.0.0"
+            },
+            "time": "2026-10-25T21:36:00+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",
