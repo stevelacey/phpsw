@@ -803,100 +803,108 @@ class Client
                     $htmls = preg_split('# and (?=<a href="https?://(www\.meetup|twitter)\.com)#', $htmls);
 
                     foreach ($htmls as $html) {
-                        /* bio start */
+                        try {
+                            /* bio start */
 
-                        $speakerNodes = $this->crawl($html);
-                        $text = $speakerNodes->text();
-                        $speakerAndOrg = explode(',', $text, 2);
+                            $speakerNodes = $this->crawl($html);
+                            $text = $speakerNodes->text();
+                            $speakerAndOrg = explode(',', $text, 2);
 
-                        $speaker = (object) [
-                            'id' => $this->slugify($speakerAndOrg[0]),
-                            'name' => $speakerAndOrg[0],
-                            'slug' => $this->slugify($speakerAndOrg[0])
-                        ];
+                            $speaker = (object) [
+                                'id' => $this->slugify($speakerAndOrg[0]),
+                                'name' => $speakerAndOrg[0],
+                                'slug' => $this->slugify($speakerAndOrg[0])
+                            ];
 
-                        $speakerExplode = explode(', ', $html, 2);
+                            $speakerExplode = explode(', ', $html, 2);
 
-                        if (isset($speakerExplode[1])) {
-                            $speaker->bio = $speakerExplode[1];
-                        }
-
-                        if (strpos($speaker->id, 'dave-liddament')) {
-                            $speaker->id = 'dave-liddament';
-                            $speaker->bio = 'Director and developer at <a href="http://www.lampbristol.com/">Lamp Bristol</a>.';
-                            $speaker->name = 'Dave Liddament';
-                            $speaker->slug = 'dave-liddament';
-                        }
-
-                        /* end */
-
-                        if ($speakerNodes->count()) {
-                            $speaker->url = $speakerNodes->filter('a')->first()->attr('href');
-
-                            if ($speaker->id == 'billie-thompson') {
-                                $speaker->url = str_replace('BillieAThompson', 'PurpleBooth', $speaker->url);
-                            } elseif ($speaker->id == 'dave-liddament') {
-                                $speaker->url = 'http://www.meetup.com/php-sw/members/104883962';
+                            if (isset($speakerExplode[1])) {
+                                $speaker->bio = $speakerExplode[1];
                             }
 
-                            if (preg_match('#https?://www\.meetup\.com/php-sw/members/([^\/]+)#', $speaker->url, $matches)) {
-                                $speaker->member = $this->getMember($matches[1]);
+                            if (strpos($speaker->id, 'dave-liddament')) {
+                                $speaker->id = 'dave-liddament';
+                                $speaker->bio = 'Director and developer at <a href="http://www.lampbristol.com/">Lamp Bristol</a>.';
+                                $speaker->name = 'Dave Liddament';
+                                $speaker->slug = 'dave-liddament';
+                            }
 
-                                if (isset($speaker->member->photo)) {
-                                    $photo = $speaker->photo = $speaker->member->photo;
+                            /* end */
 
-                                    if (isset($photo->highres_link)) {
-                                        $speaker->url = $photo->highres_link;
-                                    } elseif (isset($photo->photo_link)) {
-                                        $speaker->url = $photo->photo_link;
-                                    } elseif (isset($photo->thumb_link)) {
-                                        $speaker->url = $photo->thumb_link;
+                            if ($speakerNodes->count()) {
+                                $speaker->url = $speakerNodes->filter('a')->first()->attr('href');
+
+                                if ($speaker->id == 'billie-thompson') {
+                                    $speaker->url = str_replace('BillieAThompson', 'PurpleBooth', $speaker->url);
+                                } elseif ($speaker->id == 'dave-liddament') {
+                                    $speaker->url = 'http://www.meetup.com/php-sw/members/104883962';
+                                }
+
+                                if (preg_match('#https?://www\.meetup\.com/php-sw/members/([^\/]+)#', $speaker->url, $matches)) {
+                                    $speaker->member = $this->getMember($matches[1]);
+
+                                    if (isset($speaker->member->photo)) {
+                                        $photo = $speaker->photo = $speaker->member->photo;
+
+                                        if (isset($photo->highres_link)) {
+                                            $speaker->url = $photo->highres_link;
+                                        } elseif (isset($photo->photo_link)) {
+                                            $speaker->url = $photo->photo_link;
+                                        } elseif (isset($photo->thumb_link)) {
+                                            $speaker->url = $photo->thumb_link;
+                                        }
+                                    }
+
+                                    foreach ($speaker->member->other_services as $key => $service) {
+                                        $speaker->$key = preg_replace('#^@#', '', basename($service->identifier));
                                     }
                                 }
 
-                                foreach ($speaker->member->other_services as $key => $service) {
-                                    $speaker->$key = preg_replace('#^@#', '', basename($service->identifier));
+                                if (preg_match('#https?://twitter\.com/([^\/]+)#', $speaker->url, $matches)) {
+                                    $speaker->twitter = $matches[1];
+
+                                    $speaker->photo = (object) [
+                                        'thumb_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=bigger",
+                                        'photo_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
+                                        'highres_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
+                                        'url' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original"
+                                    ];
                                 }
                             }
 
-                            if (preg_match('#https?://twitter\.com/([^\/]+)#', $speaker->url, $matches)) {
-                                $speaker->twitter = $matches[1];
+                            $orgNode = $nodesAfterTitleNode->eq(1);
 
-                                $speaker->photo = (object) [
-                                    'thumb_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=bigger",
-                                    'photo_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
-                                    'highres_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
-                                    'url' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original"
+                            if ($orgNode->count()) {
+                                $speaker->organisation = (object) [
+                                    'name' => $orgNode->text(),
+                                    'url' => $orgNode->attr('href')
                                 ];
                             }
+
+                            $talk->speakers[] = $speaker;
+                        } catch (\Exception $e) {
+                            continue;
                         }
-
-                        $orgNode = $nodesAfterTitleNode->eq(1);
-
-                        if ($orgNode->count()) {
-                            $speaker->organisation = (object) [
-                                'name' => $orgNode->text(),
-                                'url' => $orgNode->attr('href')
-                            ];
-                        }
-
-                        $talk->speakers[] = $speaker;
                     }
 
                     $parsed = false;
 
-                    $talkDescriptionNode = $nodesAfterTitleNode->first()->parents()->first()->nextAll()->filter('p');
+                    try {
+                        $talkDescriptionNode = $nodesAfterTitleNode->first()->parents()->first()->nextAll()->filter('p');
 
-                    $talkDescriptionNode->each(function ($node) use ($event, $talk, &$parsed) {
-                        if (preg_match('#^\s*\-#', $node->text())) $parsed = true; # break if is next speaker or hr
-                        if (strpos($node->html(), '<a') !== false) $parsed = true; # break if has links
-                        if (preg_match('#BaseKit|Brightpearl|Doors#', $node->text())) $parsed = true; # sad hacks to fix some edge cases
+                        $talkDescriptionNode->each(function ($node) use ($event, $talk, &$parsed) {
+                            if (preg_match('#^\s*\-#', $node->text())) $parsed = true; # break if is next speaker or hr
+                            if (strpos($node->html(), '<a') !== false) $parsed = true; # break if has links
+                            if (preg_match('#BaseKit|Brightpearl|Doors#', $node->text())) $parsed = true; # sad hacks to fix some edge cases
 
-                        if (!$parsed) {
-                            $event->description = str_replace('<p>' . $node->html() . '</p>', '', $event->description);
-                            $talk->description .= '<p>' . preg_replace('#^\s*<br>#', '', preg_replace('#<br>\s*$#', '', $node->html())) . '</p>' . PHP_EOL;
-                        }
-                    });
+                            if (!$parsed) {
+                                $event->description = str_replace('<p>' . $node->html() . '</p>', '', $event->description);
+                                $talk->description .= '<p>' . preg_replace('#^\s*<br>#', '', preg_replace('#<br>\s*$#', '', $node->html())) . '</p>' . PHP_EOL;
+                            }
+                        });
+                    } catch (\Exception $e) {
+                        continue;
+                    }
 
                     $event->description = str_replace('<p>' . $node->html() . '</p>', '', $event->description);
 
