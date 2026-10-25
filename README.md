@@ -1,115 +1,142 @@
 PHP South West UK User Group
 ============================
 
-![Build Status](https://img.shields.io/badge/branch-master-blue.svg) [![Build Status](https://travis-ci.org/phpsw/phpsw.svg?branch=master)](https://travis-ci.org/phpsw/phpsw) ![Build Status](https://img.shields.io/badge/branch-develop-blue.svg) [![Build Status](https://travis-ci.org/phpsw/phpsw.svg?branch=develop)](https://travis-ci.org/phpsw/phpsw)
+An archive of the old [Silex](https://github.com/silexphp/Silex)-based website for the
+[PHP South West UK User Group](https://www.meetup.com/php-sw), which ran at phpsw.uk until
+it was replaced. It has been patched to run on PHP 8 and to pull its content from
+Meetup's GraphQL API, since the REST API it was built on is gone.
 
-A simple [Silex](http://silex.sensiolabs.org)-based website for the [PHP South West UK User Group](http://phpsw.uk).
+It's marked `noindex` throughout and `robots.txt` disallows everything.
 
 
-Prerequisites
--------------
+Requirements
+------------
 
-- PHP >=5.4
-- Node.js
-- Redis
-- Graphicsmagick
+- PHP 8.2+ with curl, mbstring, intl and gd
+- Composer
+- Redis, on localhost:6379
+- A web server that can run PHP-FPM, e.g. nginx
+
 
 Setup
 -----
 
 ```sh
-git clone https://github.com/phpsw/phpsw.git
+git clone https://github.com/stevelacey/phpsw.git
 cd phpsw
-brew install graphicsmagick
-composer install
-npm install
-bower install
-gulp build
+composer install --ignore-platform-req=php
 app/console redis:restore-fixtures
+app/console meetup:import:graphql
+app/console joindin:import:all
+app/console export:json
 ```
 
-Note: if you do not have bower or gulp installed globally binaries can be found in
+Composer will warn about security advisories and abandoned packages: the dependencies are the
+last releases of their 2015-era majors, and `composer.json` turns off advisory blocking.
+A few PHP 8 fixes to dependencies live in `patches/` and are applied on install by
+cweagans/composer-patches.
 
-```sh
-phpsw/node_modules/.bin/
+The CSS, JS, fonts, images and SVG templates are prebuilt and committed. The Sass and
+CoffeeScript they were built from are still in `styles/` and `scripts/`, but the gulp and bower
+toolchain that built them is gone, as it no longer installs, so edit the built files in `web/`.
+
+
+Web server
+----------
+
+Point the document root at `web/`, send everything that isn't a file to `index.php`, and strip
+the cache-busting `/rev/<timestamp>/` prefix the templates add to asset urls, e.g. for nginx:
+
+```nginx
+server {
+    server_name phpsw.test;
+    root /path/to/phpsw/web;
+
+    location / {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location /rev {
+        rewrite ^/rev/[0-9]+/(.*)$ /$1;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+}
 ```
+
+`web/.user.ini` turns off deprecation notices and warnings under PHP-FPM, which old Silex and
+Symfony 2 throw plenty of.
+
 
 Config
 ------
 
-If you're forking this for your own meetup, you'll need you set up your own `secrets.yml` to pull in your own content from Meetup & Twitter:
+Config is loaded from `config/app.yml`, then `config/<env>.yml`, `config/secrets.yml` and
+`config/local.yml` if they exist, each overriding the last. The env is `dev` unless the
+checkout's path contains `phpsw.uk`, which turned on `prod`: Thumbor image resizing and a
+remote Redis server that no longer exist, so don't.
+
+`dev` turns on debug, which shows exception pages. To run it publicly, create
+`config/local.yml` with:
 
 ```yaml
-# config/secrets.yml
-meetup:
-    api:
-        key: changeme
-
-twitter:
-    access_token: changeme
-    access_token_secret: changeme
-
-    api:
-        key: changeme
-        secret: changeme
+debug: false
+redis_database: 6
 ```
+
+`redis_database` picks a Redis database other than 0, so another app flushing its cache there
+doesn't take this one's data with it.
+
+No secrets are needed any more: Meetup, joind.in, FxTwitter and the oEmbed endpoints are all
+used without keys.
+
 
 Data
 ----
 
-Almost all of the data we store in Redis can be considered disposable, the tasks overwrite most of it on each run. This is true of everything except the hash `phpsw:slides`, where Redis is the primary store for this data (Meetup has no concept of talks or slides).
+Everything lives in Redis, under `phpsw:`.
 
-As part of processing the data pulled in, we parse event descriptions based on a common syntax used across PHPSW events in order to derive talks, speakers and associated social profiles for each event (or at least the recent ones), and link in any slides we have stored.
+- `redis:restore-fixtures` loads `fixtures/`, a 2015 snapshot of the old API data: the events
+  up to January 2015 with their original HTML, members with photos, and the slides links,
+  which were only ever kept in Redis.
+- `meetup:import:graphql` pulls the group stats, members, attendees and every event from
+  Meetup's public GraphQL API. Events already in Redis keep their HTML, but get their status
+  and attendees refreshed. It converts Meetup's plain text descriptions back into the HTML the
+  talk and speaker parsing expects, then rebuilds the speakers and talks, looks up speakers'
+  Twitter avatars via FxTwitter, saving them to `web/avatars`, and stores iframe urls for
+  Speaker Deck slides. Pass `--overwrite` to replace events already in Redis
+  too.
+- `joindin:import:all` pulls talk ratings from joind.in, which still has PHPSW events from
+  2015 on.
+- `export:json` writes every event, talk and speaker, with links to their slides and videos, to
+  `web/export.json`, linked as Export data in the footer.
 
-In dev this parsing is done on-the-fly when rendering the page, in production we do it when the `meetup:import:all` task is ran, so that the parsed data is cached in Redis and simply read when serving requests. The `phpsw:speakers` and `phpsw:talks` data that power the speaker pages is only generated in the production `meetup:import:all` run rather than being similarly available on-the-fly in dev, primarily because it would require parsing all events to build a speaker page, fixtures are however provided.
+`bin/update` runs the last three, e.g. daily from cron:
 
-
-Fixtures
---------
-
-If you want to test against PHPSW event data, you can simply load the fixtures into Redis:
-
-```sh
-app/console redis:restore-fixtures
+```
+0 3 * * * /path/to/phpsw/bin/update >> /var/log/cron.log 2>&1
 ```
 
-Secrets
--------
+Talks and speakers are parsed out of event descriptions that follow the format PHPSW used from
+2014 to around 2019:
 
-Secrets are stored in Ansible Vault, to change any of them use:
+```
+- Talk title
+Speaker Name (https://twitter.com/handle), Job at Company (https://company.com)
 
-```sh
-ansible-vault edit ansible/secrets.yml
+Talk description…
 ```
 
-Note: any changes will also require regenerating `config/secrets.yml.enc` for Travis.
+Events outside that range show their description but have no talks. Outside `prod` the parsing
+happens when pages load.
 
+Meetup's API, unauthenticated, only lists 200 members, with first names and no photos. Members
+it doesn't return keep their fixture details, attendees fill in full names, and speakers without
+a photo get initials.
 
-Tasks
------
-
-Almost all of our content is stored in [Meetup](http://www.meetup.com/php-sw), but we cache it in Redis to save on API requests, and also pull in tweets from our Twitter account.
-
-If you're forking this project for your own use, you'll need to run these tasks to pull in the content from your own accounts, and you'll probably also want to set them up as cron jobs in production.
-
-```sh
-app/console meetup:import:all
-app/console twitter:import:all
-```
-
-Tests
------
-
-We have a basic [Kahlan](https://github.com/crysalead/kahlan) test suite set up:
-
-```sh
-app/kahlan
-```
-
-Travis requires the secrets file in order to run the tests, if you make changes,
-remember to regenerate and commit the encrypted version:
-
-```sh
-travis login
-travis encrypt-file -f config/secrets.yml
-```
+The other old importers, `meetup:import:all`, `twitter:import:all` and `youtube:import:all`,
+need APIs that are gone or keys that no longer work, so there are no tweets or videos.

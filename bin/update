@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refreshes everything from Meetup and joind.in and rewrites the export, run from cron
+set -e
+
+cd "$(dirname "$0")/.."
+
+php app/console meetup:import:graphql
+php app/console joindin:import:all
+php app/console export:json
