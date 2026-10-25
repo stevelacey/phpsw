@@ -822,6 +822,13 @@ class Client
                                 $speaker->bio = $speakerExplode[1];
                             }
 
+                            $aliases = ['stu-herbert' => 'Stuart Herbert'];
+
+                            if (isset($aliases[$speaker->id])) {
+                                $speaker->name = $aliases[$speaker->id];
+                                $speaker->id = $speaker->slug = $this->slugify($speaker->name);
+                            }
+
                             if (strpos($speaker->id, 'dave-liddament')) {
                                 $speaker->id = 'dave-liddament';
                                 $speaker->bio = 'Director and developer at <a href="http://www.lampbristol.com/">Lamp Bristol</a>.';
@@ -838,12 +845,16 @@ class Client
                                     $speaker->url = str_replace('BillieAThompson', 'PurpleBooth', $speaker->url);
                                 } elseif ($speaker->id == 'dave-liddament') {
                                     $speaker->url = 'http://www.meetup.com/php-sw/members/104883962';
+                                } elseif ($speaker->id == 'tom-adam') {
+                                    $speaker->url = 'http://www.meetup.com/php-sw/members/96221542';
                                 }
 
                                 if (preg_match('#https?://www\.meetup\.com/php-sw/members/([^\/]+)#', $speaker->url, $matches)) {
                                     $speaker->member = $this->getMember($matches[1]);
 
-                                    if (isset($speaker->member->photo)) {
+                                    if ($speaker->member->id === null) {
+                                        unset($speaker->member); # not in members, meetup only lists so many now
+                                    } elseif (isset($speaker->member->photo)) {
                                         $photo = $speaker->photo = $speaker->member->photo;
 
                                         if (isset($photo->highres_link)) {
@@ -870,6 +881,22 @@ class Client
                                         'url' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original"
                                     ];
                                 }
+                            }
+
+                            // a twitter avatar meetup:import:graphql couldn't find gets initials of their name
+                            if (isset($speaker->photo->url) && strpos($speaker->photo->url, 'avatars.phpsw.uk') && !$this->redis->hget('avatars', strtolower($speaker->twitter))) {
+                                unset($speaker->photo);
+                            }
+
+                            if (!isset($speaker->photo)) {
+                                $initials = 'https://ui-avatars.com/api/?size=400&name=' . urlencode($speaker->name);
+
+                                $speaker->photo = (object) [
+                                    'thumb_link' => $initials,
+                                    'photo_link' => $initials,
+                                    'highres_link' => $initials,
+                                    'url' => $initials
+                                ];
                             }
 
                             $orgNode = $nodesAfterTitleNode->eq(1);

@@ -43,7 +43,8 @@ $app['joindin.client'] = function () {
 };
 
 $app['meetup.client'] = function ($app) {
-    return new PHPSW\Meetup\Client($app, $app['meetup'], $app['cli'], $app['debug']);
+    # outside prod, talks are parsed out of events when pages load rather than at import
+    return new PHPSW\Meetup\Client($app, $app['meetup'], $app['cli'], $app['cli'] ? $app['debug'] : $app['env'] != 'prod');
 };
 
 if ($app['env'] == 'prod') {
@@ -52,8 +53,11 @@ if ($app['env'] == 'prod') {
         ['prefix' => 'phpsw:']
     );
 } else {
-    $app['redis'] = new Predis\Client(null, [
-        'prefix' => 'phpsw:' . $app['env'] . ':'
+    # e.g. redis_database: 6 in config/local.yml, to keep clear of other apps flushing db 0
+    $app['redis'] = new Predis\Client([
+        'database' => isset($app['redis_database']) ? $app['redis_database'] : 0
+    ], [
+        'prefix' => 'phpsw:'
     ]);
 }
 
