@@ -13,8 +13,10 @@ class TalkController extends AbstractController
 
         $featured = [];
 
-        while (count($featured) < 6 && list($i, $event) = each($events)) {
-            while (count($featured) < 6 && list($i, $talk) = each($event->talks)) {
+        foreach ($events as $event) {
+            foreach ($event->talks as $talk) {
+                if (count($featured) >= 6) break 2;
+
                 if ($talk->video && $app['redis']->sismember('featured', $talk->id)) {
                     $featured[] = $talk;
                     $talk->event = $event;

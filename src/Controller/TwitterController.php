@@ -21,7 +21,7 @@ class TwitterController extends AbstractController
         );
 
         uasort($tweets, function($a, $b) {
-            return $a->created_date < $b->created_date;
+            return $b->created_date <=> $a->created_date;
         });
 
         return $app['twig']->render('twitter/tweets.html.twig', [

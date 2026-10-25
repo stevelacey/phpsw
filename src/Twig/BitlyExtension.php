@@ -27,8 +27,8 @@ class BitlyExtension extends \Twig_Extension
 
         $response = json_decode(curl_exec($ch));
 
-        if ($response->status_code != 200) {
-            throw new \Exception('Bit.ly returned ' . $response->status_code);
+        if (!isset($response->status_code) || $response->status_code != 200) {
+            return $url; # bit.ly v3 API is gone, fall back to the long url
         }
 
         return $response->data->url;

@@ -1,0 +1,11 @@
+--- a/src/Event/Emitter.php
++++ b/src/Event/Emitter.php
+@@ -45,7 +45,7 @@
+     {
+         $onceListener = function (
+             EventInterface $event,
+-            $eventName
++            $_eventName
+         ) use (&$onceListener, $eventName, $listener, $priority) {
+             $this->removeListener($eventName, $onceListener);
+             $listener($event, $eventName, $this);

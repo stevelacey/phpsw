@@ -130,12 +130,12 @@ class Client
 
                                     return $reply;
                                 },
-                                $comment->replies
+                                (isset($comment->replies) ? $comment->replies : [])
                             );
 
                             return $comment;
                         },
-                        $event->comments
+                        (isset($event->comments) ? $event->comments : [])
                     );
 
                     return $event;
@@ -144,7 +144,7 @@ class Client
             );
 
             uasort($this->events, function($a, $b) {
-                return $a->date < $b->date;
+                return $b->date <=> $a->date;
             });
         }
 
@@ -228,7 +228,7 @@ class Client
             );
 
             uasort($this->posts, function($a, $b) {
-                return $a->last_post->created_date < $b->last_post->created_date;
+                return $b->last_post->created_date <=> $a->last_post->created_date;
             });
         }
 
@@ -402,14 +402,14 @@ class Client
                                     function ($s) {
                                         return $s->id;
                                     },
-                                    $talk->speakers
+                                    isset($talk->speakers) ? $talk->speakers : []
                                 )
                             );
                         }
                     );
 
                     uasort($speaker->talks, function($a, $b) {
-                        return $a->event->date < $b->event->date;
+                        return $b->event->date <=> $a->event->date;
                     });
 
                     return $speaker;
@@ -855,7 +855,7 @@ class Client
                                         }
                                     }
 
-                                    foreach ($speaker->member->other_services as $key => $service) {
+                                    foreach ((isset($speaker->member->other_services) ? $speaker->member->other_services : []) as $key => $service) {
                                         $speaker->$key = preg_replace('#^@#', '', basename($service->identifier));
                                     }
                                 }

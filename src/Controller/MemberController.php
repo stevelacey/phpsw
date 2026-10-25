@@ -42,14 +42,14 @@ class MemberController extends AbstractController
 
             case 'date_joined_asc':
                 uasort($members, function ($a, $b) {
-                    return $a->joined > $b->joined;
+                    return $a->joined <=> $b->joined;
                 });
 
                 break;
 
             case 'date_joined_desc':
                 uasort($members, function ($a, $b) {
-                    return $a->joined < $b->joined;
+                    return $b->joined <=> $a->joined;
                 });
 
                 break;

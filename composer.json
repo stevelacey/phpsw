@@ -3,23 +3,25 @@
     "description": "PHPSW",
     "license": "MIT",
     "require": {
-        "php": "~5.4",
-        "99designs/phumbor": "dev-master",
+        "php": ">=5.4",
+        "99designs/phumbor": "dev-master#ce16636e0ae157c364d515005b03da21bc7df3d9",
         "bugsnag/bugsnag-silex": "*",
         "cocur/slugify": "@stable",
+        "cweagans/composer-patches": "~1.7",
         "dg/twitter-php": "~3.2",
         "dms/meetup-api-client": "~1.0",
-        "emojione/emojione": "dev-master",
+        "emojione/emojione": "dev-master#7273e26679248214b433e1d32727f38e8330c34d",
         "guzzlehttp/guzzle": "~4",
         "igorw/config-service-provider": "~1.2",
-        "knplabs/console-service-provider": "dev-master",
+        "knplabs/console-service-provider": "~1.1",
+        "madcoda/php-youtube-api": "~1.0",
         "misd/linkify-bundle": "~1.0",
         "nicl/silex-markdown": "~1.0",
         "predis/predis": "~0.8",
         "salavert/time-ago-in-words": "1.*",
         "silex/silex": "~1.1",
         "swiftmailer/swiftmailer": "~5.3",
-        "symfony/console": "~2.4",
+        "symfony/console": "~2.8",
         "symfony/css-selector": "~2.4",
         "symfony/dom-crawler": "~2.4",
         "symfony/filesystem": "~2.4",
@@ -27,19 +29,9 @@
         "symfony/form": "~2.6",
         "symfony/translation": "~2.6",
         "symfony/twig-bridge": "~2.4",
-        "symfony/yaml": "~2.4",
+        "symfony/yaml": "~2.8",
         "twig/extensions": ">=1.1,<2.0-dev",
-        "twig/twig": ">=1.8,<2.0-dev",
-        "madcoda/php-youtube-api": "~1.0"
-    },
-    "require-dev": {
-        "crysalead/box": "dev-master@dev",
-        "crysalead/dir": "dev-master@dev",
-        "crysalead/filter": "dev-master@dev",
-        "crysalead/jit": "dev-master@dev",
-        "crysalead/kahlan": "~1.0",
-        "crysalead/set": "dev-master@dev",
-        "crysalead/string": "dev-master@dev"
+        "twig/twig": "~1.44"
     },
     "authors": [
         {
@@ -48,7 +40,33 @@
         }
     ],
     "autoload": {
-        "psr-4": { "PHPSW\\": "src" }
+        "psr-4": {
+            "PHPSW\\": "src"
+        }
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "config": {
+        "policy": {
+            "advisories": {
+                "block": false
+            }
+        },
+        "allow-plugins": {
+            "cweagans/composer-patches": true
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "patches": {
+            "dflydev/markdown": {
+                "PHP 8: curly brace string offsets": "patches/dflydev-markdown-string-offsets.patch"
+            },
+            "guzzlehttp/guzzle": {
+                "PHP 8: closure param shadows lexical var": "patches/guzzle-emitter-closure-param.patch"
+            },
+            "symfony/yaml": {
+                "PHP 8: abs() on empty string": "patches/symfony-yaml-block-scalar-abs.patch"
+            }
+        }
+    }
 }

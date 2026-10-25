@@ -27,9 +27,13 @@ if ($app['bugsnag']['api']['key'] && $app['env'] == 'prod') {
 
 $app->register(new Cocur\Slugify\Bridge\Silex\SlugifyServiceProvider());
 $app->register(new Nicl\Silex\MarkdownServiceProvider());
+$app->register(new Silex\Provider\HttpFragmentServiceProvider());
 $app->register(new Silex\Provider\SwiftmailerServiceProvider());
 $app->register(new Silex\Provider\TranslationServiceProvider(), ['locale_fallbacks' => ['en']]);
-$app->register(new Silex\Provider\TwigServiceProvider, ['twig.path' => __DIR__ . '/../views']);
+$app->register(new Silex\Provider\TwigServiceProvider, [
+    'twig.path' => __DIR__ . '/../views',
+    'twig.options' => ['strict_variables' => false] # fixtures lack fields the import tasks add
+]);
 $app->register(new Silex\Provider\UrlGeneratorServiceProvider());
 
 $app['guzzle'] = new GuzzleHttp\Client();
@@ -95,7 +99,7 @@ $app['twitter.client'] = function ($app) {
 };
 
 $app['youtube.client'] = function ($app) {
-    return new Madcoda\Youtube([
+    return new Madcoda\Youtube\Youtube([
         'key' => $app['youtube']['api']['key']
     ]);
 };
