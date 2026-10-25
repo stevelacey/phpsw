@@ -17,7 +17,7 @@ class BitlyExtension extends \Twig_Extension
 
     public function bitly($url)
     {
-        $ch = curl_init(sprintf('http://api.bitly.com/v3/shorten?login=%s&apiKey=%s&longUrl=%s',
+        $ch = curl_init(sprintf('https://api-ssl.bitly.com/v3/shorten?login=%s&apiKey=%s&longUrl=%s',
             $this->api->login,
             $this->api->key,
             urlencode($url)

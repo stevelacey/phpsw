@@ -246,10 +246,10 @@ class Client
                 'bio' => '',
                 'url' => null,
                 'photo' => (object) [
-                    'highres_link' => 'http://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png',
-                    'photo_link'   => 'http://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png',
-                    'thumb_link'   => 'http://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png',
-                    'url'          => 'http://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png'
+                    'highres_link' => 'https://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png',
+                    'photo_link'   => 'https://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png',
+                    'thumb_link'   => 'https://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png',
+                    'url'          => 'https://img1.meetupstatic.com/img/501554713870081192606960/nobody_50.png'
                 ],
                 'organiser' => false
             ];
@@ -535,7 +535,7 @@ class Client
             'fields' => 'member_photo'
         ])->getData();
 
-        $feedback = $this->joindin->get('http://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
+        $feedback = $this->joindin->get('https://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
 
         return array_map(
             function ($event) use ($comments, $feedback) {
@@ -831,7 +831,7 @@ class Client
 
                             if (strpos($speaker->id, 'dave-liddament')) {
                                 $speaker->id = 'dave-liddament';
-                                $speaker->bio = 'Director and developer at <a href="http://www.lampbristol.com/">Lamp Bristol</a>.';
+                                $speaker->bio = 'Director and developer at <a href="https://www.lampbristol.com/">Lamp Bristol</a>.';
                                 $speaker->name = 'Dave Liddament';
                                 $speaker->slug = 'dave-liddament';
                             }
@@ -844,9 +844,9 @@ class Client
                                 if ($speaker->id == 'billie-thompson') {
                                     $speaker->url = str_replace('BillieAThompson', 'PurpleBooth', $speaker->url);
                                 } elseif ($speaker->id == 'dave-liddament') {
-                                    $speaker->url = 'http://www.meetup.com/php-sw/members/104883962';
+                                    $speaker->url = 'https://www.meetup.com/php-sw/members/104883962';
                                 } elseif ($speaker->id == 'tom-adam') {
-                                    $speaker->url = 'http://www.meetup.com/php-sw/members/96221542';
+                                    $speaker->url = 'https://www.meetup.com/php-sw/members/96221542';
                                 }
 
                                 if (preg_match('#https?://www\.meetup\.com/php-sw/members/([^\/]+)#', $speaker->url, $matches)) {
@@ -875,10 +875,10 @@ class Client
                                     $speaker->twitter = $matches[1];
 
                                     $speaker->photo = (object) [
-                                        'thumb_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=bigger",
-                                        'photo_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
-                                        'highres_link' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
-                                        'url' => "http://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original"
+                                        'thumb_link' => "https://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=bigger",
+                                        'photo_link' => "https://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
+                                        'highres_link' => "https://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original",
+                                        'url' => "https://avatars.phpsw.uk/twitter/{$speaker->twitter}?size=original"
                                     ];
                                 }
                             }

@@ -127,7 +127,7 @@ class Description
     {
         $url = preg_replace('#^https?://(www\.)?x\.com/#', 'https://twitter.com/', $url);
         $url = preg_replace('#^https?://(www\.)?twitter\.com/#', 'https://twitter.com/', $url);
-        $url = preg_replace('#^https?://(www\.)?meetup\.com/(php-sw/)?members/(\d+)/?.*$#', 'http://www.meetup.com/php-sw/members/$3', $url);
+        $url = preg_replace('#^https?://(www\.)?meetup\.com/(php-sw/)?members/(\d+)/?.*$#', 'https://www.meetup.com/php-sw/members/$3', $url);
 
         return $url;
     }

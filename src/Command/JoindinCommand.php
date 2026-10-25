@@ -27,7 +27,7 @@ class JoindinCommand extends Command
 
         $tasks = [
             'feedback' => function ($callback) {
-                $events = $this->joindin->get('http://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
+                $events = $this->joindin->get('https://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
 
                 foreach ($events as $event) {
                     $comments = $this->joindin->get($event->all_talk_comments_uri)->comments;

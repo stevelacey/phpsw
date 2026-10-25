@@ -142,6 +142,19 @@ $app
     ->value('user', $app['twitter']['user'])
 ;
 
+// upgrade links, images and embeds to https, the old http urls are mixed content or redirects now
+$app->after(function ($request, $response) {
+    if (strpos($response->headers->get('Content-Type'), 'text/html') === 0) {
+        $self = preg_quote($request->getHttpHost(), '#');
+
+        $response->setContent(preg_replace(
+            ['#\b(src|href|data-src)="http://(?!' . $self . ')#', "#url\\('http://(?!" . $self . ')#'],
+            ['$1="https://', "url('https://"],
+            $response->getContent()
+        ));
+    }
+});
+
 $app->error(function (Exception $e, $code) use ($app) {
     if ($app['debug']) return;
 

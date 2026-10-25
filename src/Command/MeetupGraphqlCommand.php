@@ -171,7 +171,7 @@ class MeetupGraphqlCommand extends Command
 
         $group = $this->get('group');
 
-        $feedback = $this->app['joindin.client']->get('http://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
+        $feedback = $this->app['joindin.client']->get('https://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
 
         foreach ($statuses as $status => $legacyStatus) {
             $edges = $this->gql->all('query ($urlname: String!, $after: String) {

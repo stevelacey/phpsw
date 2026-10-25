@@ -12,23 +12,22 @@ bugsnag:
     key: ~
 
 communities:
-  - { name: Bristol Web Folk,         logo: bristol-web-folk.png,  url: http://bristolwebfolk.github.io }
   - { name: Bristol Drupal,           logo: drupal-bristol.png,    url: https://groups.drupal.org/bristol-and-west-uk }
-  - { name: Bristol WordPress People, logo: bristol-wordpress.png, url: http://www.meetup.com/Bristol-WordPress-People }
-  - { name: PHP South Coast,          logo: php-south-coast.png,   url: http://phpsouthcoast.co.uk }
-  - { name: BrightonPHP,              logo: brighton-php.png,      url: http://brightonphp.org }
-  - { name: edPUG,                    logo: edpug.png,             url: http://www.edpug.co.uk }
-  - { name: PHP Dorset,               logo: php-dorset.png,        url: http://www.phpdorset.co.uk }
-  - { name: PHP London,               logo: php-london.png,        url: http://phplondon.org }
-  - { name: PHP Hampshire,            logo: php-hampshire.png,     url: http://phphants.co.uk }
-  - { name: PHP Women,                logo: php-women.png,         url: http://phpwomen.org }
-  - { name: PHP Cambridge,            logo: php-cambridge.png,     url: http://www.meetup.com/phpcambridge }
-  - { name: Leeds PHP,                logo: leed-php.png,          url: http://leedsphp.org }
-  - { name: PHP East Midlands,        logo: phpem.svg,             url: http://phpem.uk }
-  - { name: PHP North East,           logo: phpne.png,             url: http://phpne.org.uk }
-  - { name: PHP North West,           logo: phpnw.png,             url: http://conference.phpnw.org.uk }
-  - { name: PHP West Midlands,        logo: phpwm.png,             url: http://phpwm.org.uk }
-  - { name: PHP UK,                   logo: php-uk.png,            url: http://phpconference.co.uk }
+  - { name: Bristol WordPress People, logo: bristol-wordpress.png, url: https://www.meetup.com/bristol-wordpress-meetup-group }
+  - { name: PHP South Coast,          logo: php-south-coast.png,   url: https://phpsouthcoast.co.uk }
+  - { name: BrightonPHP,              logo: brighton-php.png,      url: https://brightonphp.org }
+  - { name: edPUG,                    logo: edpug.png,             url: https://www.edpug.co.uk }
+  - { name: PHP Dorset,               logo: php-dorset.png,        url: https://techdorset.com }
+  - { name: PHP London,               logo: php-london.png,        url: https://phplondon.org }
+  - { name: PHP Hampshire,            logo: php-hampshire.png,     url: https://phphants.co.uk }
+  - { name: PHP Women,                logo: php-women.png,         url: https://phpwomen.org }
+  - { name: PHP Cambridge,            logo: php-cambridge.png,     url: https://www.meetup.com/phpcambridge }
+  - { name: Leeds PHP,                logo: leed-php.png,          url: https://leedsphp.org }
+  - { name: PHP East Midlands,        logo: phpem.svg,             url: https://phpem.uk }
+  - { name: PHP North East,           logo: phpne.png,             url: https://phpne.org.uk }
+  - { name: PHP North West,           logo: phpnw.png,             url: https://conference.phpnw.org.uk }
+  - { name: PHP West Midlands,        logo: phpwm.png,             url: https://phpwm.org.uk }
+  - { name: PHP UK,                   logo: php-uk.png,            url: https://phpconference.co.uk }
 
 email: info@phpsw.uk
 
@@ -53,7 +52,7 @@ mandrill:
 
 meetup:
   name: PHPSW
-  url: http://www.meetup.com/php-sw
+  url: https://www.meetup.com/php-sw
   urlname: php-sw
   urlshort: meetup.com/php-sw
   api:
@@ -67,7 +66,7 @@ organisers:
     meetup: 31894252
     profile: 32485902
     twitter: leesto
-    url: http://leestone.co.uk
+    url: https://leestone.co.uk
 
   kat:
     name: Kat Zien
@@ -76,7 +75,7 @@ organisers:
     meetup: 67450042
     profile: 219497432
     twitter: kasiazien
-    url: http://katzien.com
+    url: https://katzien.com
 
   oliver:
     name: Oliver Davies
@@ -85,7 +84,7 @@ organisers:
     meetup: 137208052
     profile: 183591172
     twitter: opdavies
-    url: http://www.oliverdavies.uk
+    url: https://www.oliverdavies.uk
 
   tom:
     name: Tom Adam
@@ -93,7 +92,7 @@ organisers:
     github: tomadam
     meetup: 96221542
     profile: 122561392
-    url: http://www.instantiate.co.uk
+    url: https://www.instantiate.co.uk
 
   # steve:
   #   name: Steve Lacey
@@ -102,7 +101,7 @@ organisers:
   #   meetup: 13915585
   #   profile: 155008212
   #   twitter: stevelacey
-  #   url: http://stevelacey.net
+  #   url: https://stevelacey.net
 
 sponsors:
   meetup:
@@ -126,7 +125,7 @@ sponsors:
         name: Doug
         email: doug.fitzmaurice@ents24.com
         meetup: 47315872
-      url: http://www.ents24.com
+      url: https://www.ents24.com
       logo: /images/sponsors/ents24.png
       start: 2014-08-01
       end: ~
@@ -139,7 +138,7 @@ sponsors:
         name: Simone
         email: simone.basso@just-eat.com
         meetup: 165774592
-      url: http://tech.just-eat.com
+      url: https://tech.just-eat.com
       logo: /images/sponsors/just-eat.png
       start: 2014-08-01
       end: 2015-04-31
@@ -165,7 +164,7 @@ sponsors:
         name: Matt
         email: matt.webley@redrockconsulting.co.uk
         meetup: 159981312
-      url: http://www.redrockconsulting.co.uk
+      url: https://www.redrockconsulting.co.uk
       logo: /images/sponsors/redrock.png
       start: 2014-08-01
       end: 2015-05-31
@@ -178,7 +177,7 @@ sponsors:
         name: Jess
         email: jess@deepbluesky.com
         meetup: ~
-      url: http://deepbluesky.com
+      url: https://deepbluesky.com
       logo: /images/sponsors/deep-blue-sky.png
       start: 2016-04-01
       end: ~
@@ -192,7 +191,7 @@ sponsors:
         name: Richard
         email: richard.healy@basekit.com
         meetup: 8190757
-      url: http://www.basekit.com
+      url: https://www.basekit.com
       logo: /images/sponsors/basekit.png
       start: ~
       end: ~
@@ -205,7 +204,7 @@ sponsors:
         name: Simone
         email: simone.basso@just-eat.com
         meetup: 165774592
-      url: http://tech.just-eat.com
+      url: https://tech.just-eat.com
       logo: /images/sponsors/just-eat.png
       start: 2015-09-01
       end: ~
@@ -218,7 +217,7 @@ sponsors:
         name: Tom
         email: tcoupland@gmail.com
         meetup: ~
-      url: http://www.mixrad.io
+      url: https://www.mixrad.io
       logo: /images/sponsors/mixradio.png
       start: 2015-01-01
       end: 2016-02-01

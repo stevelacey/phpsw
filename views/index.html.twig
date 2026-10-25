@@ -1,7 +1,7 @@
 {% extends 'base.html.twig' %}
 
 {% block hero %}
-  {{ hero('http://photos3.meetupstatic.com/photos/event/6/8/d/a/highres_419066842.jpeg') }}
+  {{ hero('https://photos3.meetupstatic.com/photos/event/6/8/d/a/highres_419066842.jpeg') }}
 {% endblock %}
 
 {% block page_header %}
@@ -99,9 +99,9 @@
                 {% if organiser.github | default %}
                   <img src="https://github.com/{{ organiser.github }}.png?size=400" alt="{{ organiser.name }}">
                 {% elseif organiser.twitter | default %}
-                  <img src="{{ avatar('http://avatars.phpsw.uk/twitter/' ~ organiser.twitter ~ '?size=400x400', 'medium') }}" alt="{{ organiser.name }}">
+                  <img src="{{ avatar('https://avatars.phpsw.uk/twitter/' ~ organiser.twitter ~ '?size=400x400', 'medium') }}" alt="{{ organiser.name }}">
                 {% elseif organiser.profile | default %}
-                  <img src="{{ avatar('http://photos1.meetupstatic.com/photos/member/member_' ~ organiser.profile ~ '.jpeg', 'medium') }}" alt="{{ organiser.name }}">
+                  <img src="{{ avatar('https://photos1.meetupstatic.com/photos/member/member_' ~ organiser.profile ~ '.jpeg', 'medium') }}" alt="{{ organiser.name }}">
                 {% endif %}
               </div>
               <span class="fn organiser__name">{{ organiser.name }}</span>
