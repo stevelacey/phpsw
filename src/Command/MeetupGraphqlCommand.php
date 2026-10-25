@@ -21,6 +21,7 @@ class MeetupGraphqlCommand extends Command
         $this
             ->setName('meetup:import:graphql')
             ->addOption('overwrite', null, InputOption::VALUE_NONE, 'Overwrite events already in redis, e.g. from fixtures')
+            ->addOption('only', null, InputOption::VALUE_REQUIRED, 'Run only these tasks, e.g. events,speakers,talks')
         ;
     }
 
@@ -42,6 +43,10 @@ class MeetupGraphqlCommand extends Command
             'avatars'  => function ($callback) { $this->importAvatars($callback); },
             'embeds'   => function ($callback) { $this->importEmbeds($callback); }
         ];
+
+        if ($input->getOption('only')) {
+            $tasks = array_intersect_key($tasks, array_flip(explode(',', $input->getOption('only'))));
+        }
 
         foreach ($tasks as $type => $task) {
             echo ucfirst($type), ': ';
@@ -151,14 +156,14 @@ class MeetupGraphqlCommand extends Command
 
     protected function importEvents($callback, $overwrite)
     {
-        $fields = 'id title dateTime createdTime status eventUrl description
-            venue { id name address city country lat lon }
-            rsvps { yesCount totalCount }
+        $fields = 'id title dateTime createdTime status eventUrl description eventType
+            venue { id name address city country lat lon venueType }
+            rsvps(first: 500) { yesCount totalCount edges { node { status member { id name memberPhoto { highResUrl standardUrl thumbUrl } } } } }
             featuredEventPhoto { id highResUrl standardUrl thumbUrl }
             comments {
                 edges { node {
-                    id text created member { id name }
-                    replies { edges { node { id text created inReplyTo member { id name } } } }
+                    id text created member { id name memberPhoto { highResUrl standardUrl thumbUrl } }
+                    replies { edges { node { id text created inReplyTo member { id name memberPhoto { highResUrl standardUrl thumbUrl } } } } }
                 } }
             }';
 
@@ -181,10 +186,6 @@ class MeetupGraphqlCommand extends Command
             foreach ($edges as $edge) {
                 $node = $edge->node;
 
-                if (!$overwrite && $this->redis->hexists('events', $node->id)) {
-                    continue;
-                }
-
                 $photo = $node->featuredEventPhoto;
 
                 $event = (object) [
@@ -200,7 +201,7 @@ class MeetupGraphqlCommand extends Command
                     'url' => $node->eventUrl,
                     'description' => $this->obfuscateEmails(Description::toHtml($node->description)),
                     'yes_rsvp_count' => $node->rsvps->yesCount ?: $node->rsvps->totalCount,
-                    'venue' => $node->venue ? (object) [
+                    'venue' => $node->venue && $node->eventType != 'ONLINE' && $node->venue->venueType != 'online' ? (object) [
                         'id' => (int) $node->venue->id,
                         'name' => $node->venue->name,
                         'address_1' => $node->venue->address,
@@ -227,10 +228,26 @@ class MeetupGraphqlCommand extends Command
                             return $this->comment($edge->node);
                         }, $edge->node->replies->edges));
                     }, $node->comments->edges),
-                    'rsvps' => [],
+                    'rsvps' => array_map(function ($edge) {
+                        return (object) [
+                            'response' => strtolower($edge->node->status),
+                            'member' => $this->member($edge->node->member)
+                        ];
+                    }, $node->rsvps->edges),
                     'talks' => [],
                     'feedback' => null
                 ];
+
+                // keep events already imported, e.g. the fixtures' original html, but not a status
+                // from when they were upcoming, or attendees in the raw shape the fixtures have
+                if (!$overwrite && $existing = $this->hget('events', $node->id)) {
+                    $existing->status = $event->status;
+                    $existing->rsvps = $event->rsvps;
+                    $existing->comments = $event->comments;
+                    $existing->venue = $event->venue ? $existing->venue : null;
+
+                    $event = $existing;
+                }
 
                 foreach ($feedback as $joindin) {
                     if (preg_replace('#.*/(\d+)[-/].*#', '\1', $joindin->href) == $event->id) {
@@ -242,6 +259,48 @@ class MeetupGraphqlCommand extends Command
 
                 $callback();
             }
+        }
+
+        $this->replaceDeadPhotos();
+    }
+
+    /**
+     * Swap attendees' and commenters' photos that Meetup no longer serves for initials
+     */
+    protected function replaceDeadPhotos()
+    {
+        $events = array_map('json_decode', $this->redis->hgetall('events'));
+        $members = [];
+
+        foreach ($events as $event) {
+            foreach (array_merge((array) $event->rsvps, (array) $event->comments) as $item) {
+                if (isset($item->member->photo->url)) {
+                    $members[] = $item->member;
+                }
+
+                foreach (isset($item->replies) ? $item->replies : [] as $reply) {
+                    if (isset($reply->member->photo->url)) {
+                        $members[] = $reply->member;
+                    }
+                }
+            }
+        }
+
+        $urls = array_unique(array_map(function ($member) {
+            return $member->photo->url;
+        }, $members));
+
+        $dead = array_flip(array_intersect_key($urls, array_flip($this->deadUrls($urls))));
+
+        foreach ($members as $member) {
+            if (isset($dead[$member->photo->url])) {
+                $member->photo = (object) ['url' => avatar_url(name: $member->name, size: 400)];
+            }
+        }
+
+        // members are shared objects within each event, so saving the events saves the swaps
+        foreach ($events as $event) {
+            $this->hset('events', $event->id, $event);
         }
     }
 
@@ -383,19 +442,59 @@ class MeetupGraphqlCommand extends Command
         return new Client($this->app, $this->app['meetup'], false, true);
     }
 
+    /**
+     * The member behind an RSVP or comment, which give full names, unlike memberships, so they
+     * fill in members and their names too
+     */
+    protected function member($node)
+    {
+        $member = $this->hget('members', $node->id) ?: (object) [
+            'id' => (int) $node->id,
+            'status' => 'active',
+            'other_services' => (object) []
+        ];
+
+        if (!isset($member->name) || strlen($node->name) > strlen($member->name)) {
+            $member->name = $node->name;
+        }
+
+        if ($node->memberPhoto) {
+            $member->photo = (object) [
+                'highres_link' => $node->memberPhoto->highResUrl,
+                'photo_link' => $node->memberPhoto->standardUrl,
+                'thumb_link' => $node->memberPhoto->thumbUrl
+            ];
+        }
+
+        $member->url = $member->profile_url = $member->link = 'https://www.meetup.com/members/' . $node->id . '/';
+
+        if (!isset($member->joined)) {
+            $member->joined = $member->visited = 0;
+        }
+
+        $this->hset('members', $node->id, $member);
+
+        if (!isset($member->photo)) {
+            $member->photo = (object) ['url' => avatar_url(name: $member->name, size: 400)];
+        } elseif (!isset($member->photo->url)) {
+            $member->photo->url = $member->photo->highres_link ?: $member->photo->photo_link;
+        }
+
+        return $member;
+    }
+
     protected function comment($node, array $replies = [])
     {
-        $member = $node->member ? $this->hget('members', $node->member->id) : null;
-
         return (object) [
             'id' => $node->id,
             'event_comment_id' => $node->id,
             'comment' => $node->text,
             'time' => strtotime($node->created) * 1000,
             'in_reply_to' => isset($node->inReplyTo) ? $node->inReplyTo : null,
-            'member' => $member ?: (object) [
-                'id' => $node->member ? (int) $node->member->id : null,
-                'name' => $node->member ? $node->member->name : 'A Former Member'
+            'member' => $node->member ? $this->member($node->member) : (object) [
+                'id' => null,
+                'name' => 'A Former Member',
+                'photo' => (object) ['url' => avatar_url(name: 'A Former Member', size: 400)]
             ],
             'replies' => $replies
         ];
