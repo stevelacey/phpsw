@@ -1,5 +1,4 @@
 /config/secrets.yml
-/node_modules
 /vendor
 /web/avatars
 /config/local.yml

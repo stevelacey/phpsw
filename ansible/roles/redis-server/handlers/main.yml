@@ -1,3 +1,0 @@
----
-- name: restart redis-server
-  supervisorctl: name=redis-server state=restarted

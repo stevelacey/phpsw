@@ -1,3 +1,0 @@
----
-- name: restart thumbor
-  service: name=thumbor state=restarted

@@ -1,3 +1,0 @@
----
-- name: restart blog
-  supervisorctl: name=blog state=restarted

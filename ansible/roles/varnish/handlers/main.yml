@@ -1,3 +1,0 @@
----
-- name: restart varnish
-  service: name=varnish enabled=yes state=restarted
