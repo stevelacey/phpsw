@@ -75,12 +75,8 @@ Symfony 2 throw plenty of.
 Config
 ------
 
-Config is loaded from `config/app.yml`, then `config/<env>.yml`, `config/secrets.yml` and
-`config/local.yml` if they exist, each overriding the last. The env is `dev` unless the
-checkout's path contains `phpsw.uk`, which turned on `prod`: Thumbor image resizing and a
-remote Redis server that no longer exist, so don't.
-
-`dev` turns on debug, which shows exception pages. To run it publicly, create
+Config is loaded from `config/app.yml`, then `config/local.yml` if it exists, which overrides
+it. Debug is on by default, which shows exception pages. To run it publicly, create
 `config/local.yml` with:
 
 ```yaml
@@ -131,12 +127,12 @@ Speaker Name (https://twitter.com/handle), Job at Company (https://company.com)
 Talk description…
 ```
 
-Events outside that range show their description but have no talks. Outside `prod` the parsing
-happens when pages load.
+Events outside that range show their description but have no talks. The parsing happens when
+pages load, and the result is cached in Redis until the next import.
 
 Meetup's API, unauthenticated, only lists 200 members, with first names and no photos. Members
 it doesn't return keep their fixture details, attendees fill in full names, and speakers without
 a photo get initials.
 
-The other old importers, `meetup:import:all`, `twitter:import:all` and `youtube:import:all`,
-need APIs that are gone or keys that no longer work, so there are no tweets or videos.
+The old Meetup REST, Twitter and YouTube importers needed APIs that are gone or paid, so they've
+been removed, and there are no tweets or new videos.

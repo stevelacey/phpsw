@@ -30,7 +30,7 @@ class ExportCommand extends Command
         $this->url = rtrim($input->getOption('url'), '/');
 
         // reads events from redis and parses talks out of them, as pages do outside prod
-        $meetup = new Client($app, $app['meetup'], false, true);
+        $meetup = new Client($app, $app['meetup']);
 
         $events = array_values(array_reverse($meetup->getEvents()));
         $group = $meetup->getGroup();

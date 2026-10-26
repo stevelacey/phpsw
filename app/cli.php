@@ -13,16 +13,9 @@ $app->register(new Knp\Provider\ConsoleServiceProvider, array(
 
 $console = $app['console'];
 $console->add(new PHPSW\Command\ExportCommand);
-$console->add(new PHPSW\Command\InvoiceCommand);
 $console->add(new PHPSW\Command\JoindinCommand);
-$console->add(new PHPSW\Command\MeetupCommand);
 $console->add(new PHPSW\Command\MeetupGraphqlCommand);
-$console->add(new PHPSW\Command\TwitterCommand);
-$console->add(new PHPSW\Command\YouTubeCommand);
-
-if (in_array($app['env'], ['dev', 'testing'])) {
-    $console->add(new PHPSW\Command\Redis\DumpCommand);
-    $console->add(new PHPSW\Command\Redis\RestoreCommand);
-}
+$console->add(new PHPSW\Command\Redis\DumpCommand);
+$console->add(new PHPSW\Command\Redis\RestoreCommand);
 
 return $app;

@@ -38,16 +38,15 @@ with real content. The README has the details; this is what matters, in order.
    re-parsed events, so clear them too when starting over.
 
 5. **Public deployment.** Create `config/local.yml` containing `debug: false`, so errors
-   aren't shown as exception pages, and keep the env as `dev`: `prod` points at a Thumbor
-   server and remote Redis that no longer exist. Send an `X-Robots-Tag: noindex, nofollow`
-   header too; `robots.txt` and the meta tag are already in place.
+   aren't shown as exception pages. Send an `X-Robots-Tag: noindex, nofollow` header too;
+   `robots.txt` and the meta tag are already in place.
 
 6. **Check it.** Load `/`, `/events`, `/talks`, `/speakers`, `/members`, an event from 2015
    to 2019 (it should list talks with speakers), a talk with Speaker Deck or slides.com slides
    (they should embed), and `/export.json`.
 
-Known gaps, not worth chasing: no tweets (Twitter's API is paid), no videos (the YouTube key's
-quota is gone), only 200 members come back from Meetup without auth, events after about 2019
+Known gaps, not worth chasing: no tweets (Twitter's API is paid), no new videos (the YouTube
+importer is gone), only 200 members come back from Meetup without auth, events after about 2019
 use free-form descriptions so they have no parsed talks, `/meetup/sponsors` was already broken,
 and a few 2015 attendee photos 403.
 

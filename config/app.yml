@@ -2,14 +2,7 @@ name: PHPSW
 title: PHPSW · South West UK PHP User Group
 description: PHP User Group, meets 2nd Wednesday of every month, in Bristol, UK, talking PHP and related technologies.
 
-bitly:
-  api:
-    login: ~
-    key: ~
-
-bugsnag:
-  api:
-    key: ~
+debug: true
 
 communities:
   - { name: Bristol Drupal,           logo: drupal-bristol.png,    url: https://groups.drupal.org/bristol-and-west-uk }
@@ -34,18 +27,6 @@ email: info@phpsw.uk
 github:
   url: https://github.com/stevelacey/phpsw
 
-invoice:
-  payable_to: |
-    1 Fake Street
-    Bristol
-    BS1 1AB
-
-  account_name: PHPSW
-  account_number: 12345678
-  bic: ~
-  iban: ~
-  sort_code: 12-23-45
-
 mandrill:
   api:
     key: ~
@@ -55,8 +36,6 @@ meetup:
   url: https://www.meetup.com/php-sw
   urlname: php-sw
   urlshort: meetup.com/php-sw
-  api:
-    key: ~
 
 organisers:
   lee:
@@ -254,20 +233,10 @@ sponsors:
       start: ~
       end: ~
 
-thumbor:
-  server: ~
-  security_key: ~
-
 twitter:
   url: https://twitter.com/phpsw
   user: phpsw
 
-vouchers: []
-
 website:
   url: https://phpsw.uk
   urlshort: phpsw.uk
-
-youtube:
-  channel:
-    id: UCjj5wcw49eACHL0rZwzDJCg

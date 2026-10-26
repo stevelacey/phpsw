@@ -2,27 +2,11 @@
 
 $app = new PHPSW\Application;
 
-if (strpos($_SERVER['SCRIPT_NAME'], 'kahlan') !== false) {
-    $app['env'] = 'testing';
-} elseif (strpos(__DIR__, 'phpsw.uk') !== false) {
-    $app['env'] = 'prod';
-    $_SERVER['HTTPS'] = 'on';
-} else {
-    $app['env'] = 'dev';
-}
-
-foreach (['app', $app['env'], 'secrets', 'local'] as $config) {
+# config/local.yml overrides config/app.yml, e.g. debug: false to run it publicly
+foreach (['app', 'local'] as $config) {
     if (file_exists(__DIR__ . '/../config/' . $config . '.yml')) {
         $app->register(new Igorw\Silex\ConfigServiceProvider(__DIR__ . '/../config/' . $config . '.yml'));
     }
-}
-
-if ($app['bugsnag']['api']['key'] && $app['env'] == 'prod') {
-    $app->register(new Bugsnag\Silex\Provider\BugsnagServiceProvider, [
-        'bugsnag.options' => [
-            'apiKey' => $app['bugsnag']['api']['key']
-        ]
-    ]);
 }
 
 $app->register(new Cocur\Slugify\Bridge\Silex\SlugifyServiceProvider());
@@ -43,23 +27,15 @@ $app['joindin.client'] = function () {
 };
 
 $app['meetup.client'] = function ($app) {
-    # outside prod, talks are parsed out of events when pages load rather than at import
-    return new PHPSW\Meetup\Client($app, $app['meetup'], $app['cli'], $app['cli'] ? $app['debug'] : $app['env'] != 'prod');
+    return new PHPSW\Meetup\Client($app, $app['meetup']);
 };
 
-if ($app['env'] == 'prod') {
-    $app['redis'] = new Predis\Client(
-        ['host' => 'db.phpsw.uk'],
-        ['prefix' => 'phpsw:']
-    );
-} else {
-    # e.g. redis_database: 6 in config/local.yml, to keep clear of other apps flushing db 0
-    $app['redis'] = new Predis\Client([
-        'database' => isset($app['redis_database']) ? $app['redis_database'] : 0
-    ], [
-        'prefix' => 'phpsw:'
-    ]);
-}
+# e.g. redis_database: 6 in config/local.yml, to keep clear of other apps flushing db 0
+$app['redis'] = new Predis\Client([
+    'database' => isset($app['redis_database']) ? $app['redis_database'] : 0
+], [
+    'prefix' => 'phpsw:'
+]);
 
 $app['swiftmailer.options'] = [
     'host' => 'smtp.mandrillapp.com',
@@ -68,24 +44,12 @@ $app['swiftmailer.options'] = [
     'password' => $app['mandrill']['api']['key']
 ];
 
-$app['thumbor.builder'] = function ($app) {
-    return Thumbor\Url\BuilderFactory::construct(
-        str_replace('http', $app['env'] == 'prod' ? 'https' : 'http', $app['thumbor']['server']),
-        $app['thumbor']['security_key']
-    );
-};
-
 $app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
-    $twig->addExtension(new PHPSW\Twig\BitlyExtension($app['bitly']['api']));
     $twig->addExtension(new PHPSW\Twig\EmojiExtension());
     $twig->addExtension(new PHPSW\Twig\SponsorExtension($app['sponsors']));
-    $twig->addExtension(
-        $app['env'] == 'prod'
-            ? new PHPSW\Twig\ThumborExtension($app['thumbor.builder'])
-            : new PHPSW\Twig\ThumborExtension(null, function ($twitter) use ($app) {
-                return $app['redis']->hget('avatars', strtolower($twitter));
-            })
-    );
+    $twig->addExtension(new PHPSW\Twig\ThumborExtension(function ($twitter) use ($app) {
+        return $app['redis']->hget('avatars', strtolower($twitter));
+    }));
     $twig->addExtension(new Salavert\Twig\Extension\TimeAgoExtension($app['translator']));
     $twig->addExtension(new Twig_Extensions_Extension_Text($app));
     $twig->addExtension(
@@ -99,28 +63,12 @@ $app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
     return $twig;
 }));
 
-$app['twitter.client'] = function ($app) {
-    return new Twitter(
-        $app['twitter']['api']['key'],
-        $app['twitter']['api']['secret'],
-        $app['twitter']['access_token'],
-        $app['twitter']['access_token_secret']
-    );
-};
-
-$app['youtube.client'] = function ($app) {
-    return new Madcoda\Youtube\Youtube([
-        'key' => $app['youtube']['api']['key']
-    ]);
-};
-
 $app->get('/',                   'PHPSW\Controller\AppController::indexAction')->bind('home');
 $app->get('/500',                'PHPSW\Controller\AppController::errorAction')->bind('error');
 $app->get('/brand',              'PHPSW\Controller\AppController::brandAction')->bind('brand');
 $app->get('/code-of-conduct',    'PHPSW\Controller\AppController::conductAction')->bind('conduct');
 $app->get('/events',             'PHPSW\Controller\EventController::indexAction')->bind('events');
 $app->get('/events/{id}-{slug}', 'PHPSW\Controller\EventController::showAction')->bind('event');
-$app->get('/invoice/{token}',    'PHPSW\Controller\AppController::invoiceAction')->bind('invoice');
 $app->get('/members',            'PHPSW\Controller\MemberController::indexAction')->bind('members');
 $app->get('/speakers',           'PHPSW\Controller\SpeakerController::indexAction')->bind('speakers');
 $app->get('/speakers/{slug}',    'PHPSW\Controller\SpeakerController::showAction')->bind('speaker');
@@ -133,14 +81,6 @@ $app->get('/meetup/sponsors',    'PHPSW\Controller\MeetupController::sponsorsAct
 $app->post('/message',           'PHPSW\Controller\MessageController::sendAction')->bind('message');
 $app->get('/talks',              'PHPSW\Controller\TalkController::indexAction')->bind('talks');
 $app->get('/talks/{slug}',       'PHPSW\Controller\TalkController::showAction')->bind('talk');
-$app->get('/vouchers',           'PHPSW\Controller\AppController::vouchersAction')->bind('vouchers');
-
-$app
-    ->get('/twitter/{user}/tweets', 'PHPSW\Controller\TwitterController::tweetsAction')
-    ->bind('tweets')
-    ->assert('user', $app['twitter']['user'])
-    ->value('user', $app['twitter']['user'])
-;
 
 // upgrade links, images and embeds to https, the old http urls are mixed content or redirects now
 $app->after(function ($request, $response) {

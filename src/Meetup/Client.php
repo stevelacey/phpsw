@@ -6,39 +6,21 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class Client
 {
-    protected $albums;
-    protected $api;
     protected $app;
-    protected $cli;
     protected $config;
-    protected $debug;
     protected $events;
     protected $group;
     protected $members;
     protected $organisers;
-    protected $photos;
     protected $posts;
     protected $reviews;
     protected $speakers;
     protected $talks;
 
-    public function __construct($app, array $config, $cli, $debug = false)
+    public function __construct($app, array $config)
     {
-        if ($cli) {
-            $this->api = new API\Client($config['api']['key']);
-
-            if ($debug) {
-                $this->api->guzzle->getEventDispatcher()->addListener('request.sent', function ($event) {
-                    echo $event['request']->getUrl(), PHP_EOL;
-                });
-            }
-        }
-
         $this->app = $app;
-        $this->cli = $cli;
         $this->config = $config;
-        $this->debug = $debug;
-        $this->joindin = $app['joindin.client'];
         $this->redis = $app['redis'];
         $this->organisers = $app['organisers'];
         $this->sponsors = $app['sponsors'];
@@ -47,30 +29,7 @@ class Client
     public function getGroup()
     {
         if ($this->group === null) {
-            if ($this->cli) {
-                $response = $this->api->getGroups([
-                    'group_urlname' => $this->config['urlname'],
-                    'fields' => implode(',', ['photos', 'sponsors'])
-                ]);
-
-                $this->group = (object) current($response->getData());
-
-                $this->group->photos = $this->getPhotosFromApi();
-
-                $this->group->rating = (object) [
-                    'average' => $this->group->rating,
-                    'count' => array_sum(
-                        array_map(
-                            function ($event) {
-                                return isset($event->rating) ? $event->rating['count'] : 0;
-                            },
-                            $this->getEvents()
-                        )
-                    )
-                ];
-            } else {
-                $this->group = json_decode($this->redis->get('group'));
-            }
+            $this->group = json_decode($this->redis->get('group'));
         }
 
         return $this->group;
@@ -79,16 +38,12 @@ class Client
     public function getEvents()
     {
         // parsing every event's talks on each request is slow, so keep the result until the next import
-        if ($this->events === null && !$this->cli && $cached = $this->redis->get('cache:events')) {
+        if ($this->events === null && $cached = $this->redis->get('cache:events')) {
             $this->events = unserialize($cached);
         }
 
         if ($this->events === null) {
-            if ($this->cli) {
-                $this->events = $this->getEventsFromApi();
-            } else {
-                $this->events = $this->getEventsFromCache();
-            }
+            $this->events = $this->getEventsFromCache();
 
             $sponsor_ids = [];
 
@@ -102,10 +57,8 @@ class Client
 
             $this->events = array_map(
                 function ($event) use ($sponsor_ids) {
-                    if ($this->cli && !$this->debug || !$this->cli && $this->debug) {
-                        $event = $this->parseEvent($event);
-                        $event = $this->parseTalks($event);
-                    }
+                    $event = $this->parseEvent($event);
+                    $event = $this->parseTalks($event);
 
                     $event->date = \DateTime::createFromFormat('U', $event->time / 1000);
 
@@ -152,9 +105,7 @@ class Client
                 return $b->date <=> $a->date;
             });
 
-            if (!$this->cli) {
-                $this->redis->set('cache:events', serialize($this->events));
-            }
+            $this->redis->set('cache:events', serialize($this->events));
         }
 
         return $this->events;
@@ -199,33 +150,10 @@ class Client
         );
     }
 
-    public function getDiscussionBoard()
-    {
-        return current($this->getDiscussionBoards());
-    }
-
-    public function getDiscussionBoards()
-    {
-        $boards = $this->api->getDiscussionBoards([
-            'urlname' => $this->config['urlname']
-        ]);
-
-        return array_map(
-            function ($board) {
-                return (object) $board;
-            },
-            $boards->getData()
-        );
-    }
-
-    public function getPosts($board = null)
+    public function getPosts()
     {
         if ($this->posts === null) {
-            if ($this->cli) {
-                $this->posts = $this->getPostsFromApi();
-            } else {
-                $this->posts = $this->getPostsFromCache();
-            }
+            $this->posts = $this->getPostsFromCache();
 
             $this->posts = array_map(
                 function ($post) {
@@ -270,44 +198,16 @@ class Client
     public function getMembers()
     {
         if ($this->members === null) {
-            if ($this->cli) {
-                $this->members = [];
+            $this->members = array_map(
+                function ($member) {
+                    $member = json_decode($member);
 
-                $params = [
-                    'group_urlname' => $this->config['urlname'],
-                    'page' => 200,
-                    'offset' => 0,
-                    'order' => 'name'
-                ];
+                    $member->joined = \DateTime::createFromFormat('U', $member->joined / 1000);
 
-                do {
-                    $members = $this->api->getMembers($params);
-                    $profiles = $this->api->getGroupProfiles($params);
-
-                    $this->members = array_merge(
-                        $this->members,
-                        array_replace_recursive(
-                            $members->getData(),
-                            $profiles->getData()
-                        )
-                    );
-
-                    $meta = $members->getMetadata();
-
-                    $params['offset']++;
-                } while ($params['page'] * $params['offset'] < $meta['total_count']);
-            } else {
-                $this->members = array_map(
-                    function ($member) {
-                        $member = json_decode($member);
-
-                        $member->joined = \DateTime::createFromFormat('U', $member->joined / 1000);
-
-                        return $member;
-                    },
-                    $this->redis->hgetall('members')
-                );
-            }
+                    return $member;
+                },
+                $this->redis->hgetall('members')
+            );
 
             $organisers = array_map(
                 function ($organiser) {
@@ -367,18 +267,14 @@ class Client
     public function getReviews()
     {
         if ($this->reviews === null) {
-            if ($this->cli) {
-                $this->reviews = $this->api->getComments(['group_urlname' => $this->config['urlname']])->getData();
-            } else {
-                $this->reviews = array_map(
-                    function ($review) {
-                        $review = json_decode($review);
+            $this->reviews = array_map(
+                function ($review) {
+                    $review = json_decode($review);
 
-                        return $review;
-                    },
-                    $this->redis->hgetall('reviews')
-                );
-            }
+                    return $review;
+                },
+                $this->redis->hgetall('reviews')
+            );
 
             $this->reviews = array_map(
                 function ($review) {
@@ -443,27 +339,6 @@ class Client
         }
     }
 
-    public function getTaggedPhotos($id)
-    {
-        $params = [
-            'group_urlname' => $this->config['urlname'],
-            'tagged' => $id
-        ];
-
-        return array_map(
-            function ($photo) {
-                $photo = (object) $photo;
-
-                $photo->id = $photo->photo_id;
-                $photo->member = (object) $photo->member;
-                $photo->photo_album = (object) $photo->photo_album;
-
-                return $photo;
-            },
-            $this->api->getPhotos($params)->getData()
-        );
-    }
-
     public function getTalk($slug)
     {
         $talks = [];
@@ -526,137 +401,6 @@ class Client
         return $this->talks;
     }
 
-    protected function getEventsFromApi()
-    {
-        $events = $this->api->getEvents([
-            'group_urlname' => $this->config['urlname'],
-            'status' => implode(',', [
-                'upcoming', 'draft', 'past', 'proposed', 'suggested', 'cancelled'
-            ]),
-            'desc' => 'true'
-        ])->getData();
-
-        $comments = $this->api->getEventComments([
-            'event_id' => implode(',', array_map(
-                function ($event) { return $event['id']; },
-                $events
-            )),
-            'fields' => 'member_photo'
-        ])->getData();
-
-        $feedback = $this->joindin->get('https://api.joind.in/v2.1/events', ['tags' => 'phpsw'])->events;
-
-        return array_map(
-            function ($event) use ($comments, $feedback) {
-                $event = (object) $event;
-
-                if (isset($event->description)) {
-                    $event->description = preg_replace(
-                        '#<a href="mailto:.*">(.*)@(.*)\.(.*)</a>#U',
-                        '<a href="mailto:\1 at \2 dot \3" class="email">\1 at \2 dot \3</a>',
-                        $event->description
-                    );
-                } else {
-                    $event->description = null;
-                }
-
-                $event->slug = $this->slugify($event->name);
-
-                $comments = array_filter(
-                    array_map(
-                        function ($comment) {
-                            $comment = (object) $comment;
-
-                            $comment->id = $comment->event_comment_id;
-                            $comment->member = $this->getMember($comment->member_id);
-                            $comment->url = $comment->comment_url;
-
-                            return $comment;
-                        },
-                        $comments
-                    ),
-                    function ($comment) use ($event) {
-                        return $comment->event_id == $event->id;
-                    }
-                );
-
-                $event->comments = array_values(
-                    array_filter(
-                        $comments,
-                        function ($comment) {
-                            return !isset($comment->in_reply_to);
-                        }
-                    )
-                );
-
-                $event->comments = array_map(
-                    function ($comment) use ($comments) {
-                        $comment->replies = array_reverse(
-                            array_values(
-                                array_filter(
-                                    $comments,
-                                    function ($reply) use ($comment) {
-                                        return isset($reply->in_reply_to) && $reply->in_reply_to == $comment->id;
-                                    }
-                                )
-                            )
-                        );
-
-                        return $comment;
-                    },
-                    $event->comments
-                );
-
-                $event->feedback = current(array_filter(
-                    $feedback,
-                    function ($feedback) use ($event) {
-                        return preg_replace('#.*/(\d+)-.*#', '\1', $feedback->href) == $event->id;
-                    }
-                ));
-
-                if ($event->feedback) {
-                    $event->feedback = (object) [
-                        'uri' => $event->feedback->humane_website_uri
-                    ];
-                } else {
-                    $event->feedback = null;
-                }
-
-                $event->photos = array_values(
-                    array_filter($this->getGroup()->photos, function ($photo) use ($event) {
-                        $album = $photo->album;
-
-                        return isset($album->event_id) && $album->event_id == $event->id || $album->title == $event->name;
-                    })
-                );
-
-                usort($event->photos, function ($a, $b) {
-                    if (isset($a->album->ordering, $b->album->ordering)) {
-                        return array_search($a->id, $a->album->ordering) > array_search($b->id, $b->album->ordering) ? 1 : -1;
-                    }
-                });
-
-                $event->rsvps = array_map(
-                    function ($rsvp) {
-                        $rsvp = (object) $rsvp;
-
-                        $rsvp->member = $this->getMember($rsvp->member['member_id']);
-
-                        return $rsvp;
-                    },
-                    $this->api->getRSVPs(['event_id' => $event->id])->getData()
-                );
-
-                $event->talks = [];
-                $event->url = $event->event_url;
-                $event->venue = isset($event->venue) ? (object) $event->venue : null;
-
-                return $event;
-            },
-            $events
-        );
-    }
-
     protected function getEventsFromCache()
     {
         return array_map(
@@ -668,78 +412,6 @@ class Client
                 return $event;
             },
             $this->redis->hgetall('events')
-        );
-    }
-
-    protected function getPhotoAlbum($id)
-    {
-        foreach ($this->getPhotoAlbumsFromApi() as $album) {
-            if ($album->photo_album_id == $id) {
-                return $album;
-            }
-        }
-    }
-
-    protected function getPhotoAlbumsFromApi()
-    {
-        if ($this->albums === null) {
-            $this->albums = array_map(
-                function ($album) {
-                    $album = (object) $album;
-
-                    $album->id = $album->photo_album_id;
-                    $album->album_photo = (object) $album->album_photo;
-
-                    return $album;
-                },
-                $this->api->getPhotoAlbums(['group_id' => $this->getGroup()->id])->getData()
-            );
-        }
-
-        return $this->albums;
-    }
-
-    protected function getPhotosFromApi()
-    {
-        if ($this->photos === null) {
-            $this->photos = array_map(
-                function ($photo) {
-                    $photo = (object) $photo;
-
-                    $photo->id = $photo->photo_id;
-                    $photo->member = (object) $photo->member;
-                    $photo->album = $this->getPhotoAlbum($photo->photo_album['photo_album_id']);
-
-                    return $photo;
-                },
-                $this->api->getPhotos(['group_urlname' => $this->config['urlname']])->getData()
-            );
-        }
-
-        return $this->photos;
-    }
-
-    protected function getPostsFromApi($board = null)
-    {
-        if ($board === null) {
-            $board = $this->getDiscussionBoard();
-        }
-
-        $posts = $this->api->getDiscussions([
-            'urlname' => $this->config['urlname'],
-            'bid' => $board->id
-        ]);
-
-        return array_map(
-            function ($post) {
-                $post = (object) $post;
-
-                $post->last_post = (object) $post->last_post;
-                $post->url = $this->config['url'] . '/messages/boards/thread/' . $post->id;
-
-                return $post;
-            },
-            $posts->getData()
         );
     }
 

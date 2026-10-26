@@ -43,8 +43,13 @@ class JoindinCommand extends Command
                         continue;
                     }
 
-                    $comments = $this->joindin->get($event->all_talk_comments_uri)->comments;
-                    $talks = $this->joindin->get($event->talks_uri)->talks;
+                    // joind.in sometimes fails a request, skip that event's talks rather than the whole import
+                    $comments = $this->joindin->get($event->all_talk_comments_uri)->comments ?? null;
+                    $talks = $this->joindin->get($event->talks_uri)->talks ?? null;
+
+                    if ($comments === null || $talks === null) {
+                        continue;
+                    }
 
                     foreach ($talks as $talk) {
                         $id = $eventId . '-' . $this->meetup->slugify($talk->talk_title);

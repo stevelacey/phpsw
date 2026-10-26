@@ -444,7 +444,7 @@ class MeetupGraphqlCommand extends Command
      */
     protected function parser()
     {
-        return new Client($this->app, $this->app['meetup'], false, true);
+        return new Client($this->app, $this->app['meetup']);
     }
 
     /**

@@ -4,9 +4,8 @@ namespace PHPSW\Twig;
 
 class ThumborExtension extends \Twig_Extension
 {
-    public function __construct(?\Thumbor\Url\BuilderFactory $builder = null, ?callable $avatars = null)
+    public function __construct(?callable $avatars = null)
     {
-        $this->builder = $builder;
         $this->avatars = $avatars;
     }
 
@@ -50,7 +49,6 @@ class ThumborExtension extends \Twig_Extension
             ->addFilter('grayscale')
             ->addFilter('contrast', 20)
             ->addFilter('rgb', 6, 10, 15)
-            ->smartCrop(true)
         ;
     }
 
@@ -61,9 +59,7 @@ class ThumborExtension extends \Twig_Extension
 
     public function thumbor($url)
     {
-        if (!$this->builder) return new WsrvUrl($url, $this->avatars);
-
-        return $this->builder->url($url);
+        return new WsrvUrl($url, $this->avatars);
     }
 
     public function getName()
